@@ -18,6 +18,7 @@ import {
   getHash,
   isDataUrl,
   isExternalUrl,
+  isWindows,
   normalizePath,
   processSrcSet,
   removeLeadingSlash,
@@ -796,12 +797,18 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         let result = html
 
+        // On Windows, `facadeModuleId` and `id` might be using different slashes.
+        // when the user sets `rollupOptions.input` to a relative path or a path
+        // with user defined slashes. Normalize them to compare.
+        const normalizeSlash = (id: string | null) =>
+          isWindows ? id : id?.replace(/\\/g, '/')
+
         // find corresponding entry chunk
         const chunk = Object.values(bundle).find(
           (chunk) =>
             chunk.type === 'chunk' &&
             chunk.isEntry &&
-            chunk.facadeModuleId === id,
+            normalizeSlash(chunk.facadeModuleId) === normalizeSlash(id),
         ) as OutputChunk | undefined
 
         let canInlineEntry = false
